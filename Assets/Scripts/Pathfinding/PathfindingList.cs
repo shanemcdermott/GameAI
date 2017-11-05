@@ -2,18 +2,19 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PathfindingList
+public class PathfindingList<T>
 {
-    private List<NodeRecord> contents;
+    private List<NodeRecord<T>> contents;
 
 
-    public virtual void Build(BaseGraph graph, int start, int end, Heuristic heuristic)
+    public virtual void Build(IGraph<T> graph, T start, T end, Heuristic<T> heuristic)
     {
-        contents = new List<NodeRecord>(graph.nodes.Length);
+        contents = new List<NodeRecord<T>>();
 
+        /*
         for(int i = 0; i < graph.nodes.Length; i++)
         {
-            NodeRecord record = new NodeRecord();
+            NodeRecord<int> record = new NodeRecord<int>();
             record.node = i;
             record.connection = null;
             record.costSoFar = 0;
@@ -21,6 +22,7 @@ public class PathfindingList
             //record.category = NodeCategory.Open;
             contents[i] = record;
         }
+        */
         
         //contents[start].estimatedTotalCost = heuristic.Estimate(start);
     }
@@ -29,11 +31,28 @@ public class PathfindingList
     /// Adds the record to the list.
     /// </summary>
     /// <param name="record">The record to add.</param>
-    public virtual void Add(NodeRecord record)
+    public virtual void Add(NodeRecord<T> record)
     {
         contents.Add(record);
     }
 
+    public virtual void Update(NodeRecord<T> record)
+    {
+        bool found = false;
+        for (int i = 0; i < contents.Count; i++)
+        {
+            if (contents[i].node.Equals(record.node))
+            {
+                contents[i] = record;
+                found = true;
+                break;
+            }
+        }
+        if(!found)
+        {
+            Add(record);
+        }
+    }
 
     /// <summary>
     /// Removes the record from the list and returns true if successful.
@@ -44,7 +63,7 @@ public class PathfindingList
     /// <returns>
     /// true if successful.
     /// </returns>
-    public virtual bool Remove(NodeRecord record)
+    public virtual bool Remove(NodeRecord<T> record)
     {
         return contents.Remove(record);
     }
@@ -54,35 +73,31 @@ public class PathfindingList
     /// </summary>
     /// <param name="category"></param>
     /// <returns></returns>
-    public NodeRecord SmallestElement(NodeCategory category, Heuristic heuristic)
+    public NodeRecord<T> SmallestElement(NodeCategory category, Heuristic<T> heuristic)
     {
-        return contents[0];
+        NodeRecord<T> smallest = contents[0];
+
+        for (int i = 0; i < contents.Count; i++)
+        {
+            if (contents[i].category != category)
+                continue;
+
+            if (contents[i].estimatedTotalCost < smallest.estimatedTotalCost)
+                smallest = contents[i];
+               
+        }
+
+        return smallest;
     }
     
-    /// <summary>
-    /// Indexer definition to allow [] access.
-    /// </summary>
-    /// <param name="index">
-    /// The index of the element to access.
-    /// </param>
-    /// <returns></returns>
-    public NodeRecord this[int index]
+    public NodeRecord<T> GetNodeRecord(T node)
     {
-        get
+        for(int i = 0; i < contents.Count; i++)
         {
-            return (contents[index]);
+            if (contents[i].node.Equals(node))
+                return contents[i];
         }
-        set
-        {
-            if (0 <= index && index < contents.Count)
-            {
-                contents[index] = value;
-            }
-            else
-            {
-                Debug.Log("<color=red>Error:</color> NodeRecord index out of bounds: " + index);
-            }
-        }
+        return new NodeRecord<T>();
     }
   
 }

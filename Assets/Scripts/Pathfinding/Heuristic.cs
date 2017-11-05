@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Heuristic : MonoBehaviour
+public class Heuristic<T> : MonoBehaviour
 {
 
-    public int goalNode;
+    public T goal;
 
-    public virtual float Estimate(int node)
+    public virtual float Estimate(T node)
     {
         return 1f;
     }

@@ -51,15 +51,15 @@ public enum NodeCategory
     Closed
 }
 
-public struct NodeRecord
+public struct NodeRecord<T>
 {
-    public int node;
-    public BaseConnection<int> connection;
+    public T node;
+    public BaseConnection<T> connection;
     public float costSoFar;
     public float estimatedTotalCost;
     public NodeCategory category;
     
-    public NodeRecord(int node, BaseConnection<int> connection, float costSoFar, float estTotalCost, NodeCategory category)
+    public NodeRecord(T node, BaseConnection<T> connection, float costSoFar, float estTotalCost, NodeCategory category)
     {
         this.node = node;
         this.connection = connection;

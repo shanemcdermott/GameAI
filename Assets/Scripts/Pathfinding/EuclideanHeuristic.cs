@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class EuclideanHeuristic : Heuristic
+public class EuclideanHeuristic : Heuristic<Vector3>
 {
 
     /// <summary>
@@ -10,11 +10,8 @@ public class EuclideanHeuristic : Heuristic
     /// </summary>
     /// <param name="node"></param>
     /// <returns></returns>
-    public override float Estimate(int node)
+    public override float Estimate(Vector3 node)
     {
-        GameObject A = World.GetObject(node);
-        GameObject B = World.GetObject(goalNode);
-
-        return Vector3.Distance(A.transform.position, B.transform.position);
+        return Vector3.Distance(node, goal);
     }
 }

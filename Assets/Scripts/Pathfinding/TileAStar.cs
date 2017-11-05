@@ -2,15 +2,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class AStar : MonoBehaviour
+public class TileAStar<T> : MonoBehaviour
 {
-    public NodeRecord<int> startRecord;
-    private PathfindingList pathFindingList;
 
-    public virtual List<BaseConnection<int>> PathFind(BaseGraph graph, int start, int end, Heuristic heuristic)
+    public NodeRecord<T> startRecord;
+    private PathfindingList<T> pathFindingList;
+
+    public virtual List<BaseConnection<T>> PathFind(IGraph<T> graph, T start, T end, Heuristic<T> heuristic)
     {
         //Initialize the record for the start node.
-        startRecord = new NodeRecord<int>();
+        startRecord = new NodeRecord<T>();
         startRecord.node = start;
         startRecord.connection = null;
         startRecord.costSoFar = 0;
@@ -18,41 +19,42 @@ public class AStar : MonoBehaviour
         startRecord.category = NodeCategory.Open;
 
         //Initialize the open and closed lists
-        pathFindingList = new PathfindingList();
+        pathFindingList = new PathfindingList<T>();
         pathFindingList.Build(graph, start, end, heuristic);
-        pathFindingList[start] = startRecord;
+        //pathFindingList[start] = startRecord;
 
-        NodeRecord<int> current = startRecord;
+
+        NodeRecord<T> current = startRecord;
 
         while (true)//lengthopen>0)
         {
+   
             current = pathFindingList.SmallestElement(NodeCategory.Open, heuristic);
-            if (current.node == end) break;
+            if (current.node.Equals(end)) break;
 
-            IConnection<int>[] links;
+            IConnection<T>[] links;
             graph.GetConnections(current.node, out links);
 
-            foreach(IConnection<int> con in links)
+            foreach (IConnection<T> con in links)
             {
-                int endNode = con.GetToNode();
+                T endNode = con.GetToNode();
                 float endNodeCost = current.costSoFar + con.GetCost();
                 float endNodeHeuristic = 0f;
-                NodeRecord<int> endNodeRecord = pathFindingList[endNode];
+                NodeRecord<T> endNodeRecord = pathFindingList.GetNodeRecord(endNode);
 
-
-                if (pathFindingList[endNode].category==NodeCategory.Closed)
+                if (endNodeRecord.category == NodeCategory.Closed)
                 {
-                    if (pathFindingList[endNode].costSoFar <= endNodeCost)
+                    if (endNodeRecord.costSoFar <= endNodeCost)
                         continue;
-    
-                    endNodeHeuristic = endNodeRecord.estimatedTotalCost - endNodeRecord.costSoFar;
-                    
-                }
-                else if(pathFindingList[endNode].category==NodeCategory.Open)
-                {
-                    if (pathFindingList[endNode].costSoFar <= endNodeCost) continue;
 
-                    endNodeHeuristic = pathFindingList[endNode].estimatedTotalCost - pathFindingList[endNode].costSoFar;
+                    endNodeHeuristic = endNodeRecord.estimatedTotalCost - endNodeRecord.costSoFar;
+
+                }
+                else if (endNodeRecord.category == NodeCategory.Open)
+                {
+                    if (endNodeRecord.costSoFar <= endNodeCost) continue;
+
+                    endNodeHeuristic = endNodeRecord.estimatedTotalCost - endNodeRecord.costSoFar;
                 }
                 else
                 {
@@ -60,10 +62,10 @@ public class AStar : MonoBehaviour
                 }
 
                 endNodeRecord.costSoFar = endNodeCost;
-                endNodeRecord.connection = (BaseConnection<int>)con;
+                endNodeRecord.connection = (BaseConnection<T>)con;
                 endNodeRecord.estimatedTotalCost = endNodeCost + endNodeHeuristic;
                 endNodeRecord.category = NodeCategory.Open;
-                pathFindingList[endNode] = endNodeRecord;
+                pathFindingList.Update(endNodeRecord);
 
 
 
@@ -72,21 +74,21 @@ public class AStar : MonoBehaviour
             //We've finished looking at the connections for the current node,
             //so mark it as closed.
             current.category = NodeCategory.Closed;
-            pathFindingList[current.node] = current;
+            pathFindingList.Update(current);
 
         }
 
-        if(current.node != end)
+        if (!current.node.Equals(end))
         {
             return null;
         }
         else
         {
-            List<BaseConnection<int>> path = new List<BaseConnection<int>>();
-            while(current.node != start)
+            List<BaseConnection<T>> path = new List<BaseConnection<T>>();
+            while (!current.node.Equals(start))
             {
                 path.Add(current.connection);
-                current = pathFindingList[current.connection.GetFromNode()];
+                current = pathFindingList.GetNodeRecord(current.connection.GetFromNode());
             }
 
             path.Reverse();
