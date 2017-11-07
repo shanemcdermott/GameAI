@@ -17,18 +17,24 @@ public class TileAStar : MonoBehaviour
 
     public void FindPath()
     {
-        if(astar == null)
-        {
-            astar = new AStar<Vector3>();
-            astar.Init(tileGraph, start.position, goal.position, new EuclideanHeuristic(this.goal.position));
-        }
-        
-        path = astar.PathFind(tileGraph, start.position, goal.position, new EuclideanHeuristic(this.goal.position));
-        if(path != null)
+        astar = new AStar<Vector3>();
+        Vector3 startPos = tileGraph.WorldToTileCenter(start.position);
+        Vector3 goalPos = tileGraph.WorldToTileCenter(goal.position);     
+        path = astar.PathFind(tileGraph, startPos, goalPos, new EuclideanHeuristic(goalPos));
+
+        if (path != null)
         {
             Debug.Log("Found Path: " + path);
-
         }
+        else
+        {
+            Debug.Log("No Path Found");
+        }
+    }
+
+    public void Restart()
+    {
+        astar = null;
     }
 
     public void Iterate()
@@ -39,21 +45,28 @@ public class TileAStar : MonoBehaviour
         }
         if(astar.pathFindingList == null)
         {
-            astar.Init(tileGraph, start.position, goal.position, new EuclideanHeuristic(this.goal.position));
+            Vector3 startPos = tileGraph.WorldToTileCenter(start.position);
+            Vector3 goalPos = tileGraph.WorldToTileCenter(goal.position);
+            astar.Init(tileGraph, startPos, goalPos, new EuclideanHeuristic(goalPos));
         }
 
-        astar.Iterate(numIterations);
-
-        path = new List<BaseConnection<Vector3>>();
-        NodeRecord<Vector3> record = astar.current;
-        while (!record.node.Equals(start) && record.node != null)
+        if(astar.ProcessNodes(numIterations))
         {
-            path.Add(record.connection);
-            record = astar.pathFindingList.GetNodeRecord(record.connection.GetFromNode());
+            Debug.Log("Found Path!");
+            
         }
 
-        path.Reverse();
+        path = astar.GetPath();
+        if(path != null)
+        {
+            Debug.Log("Current Path: " + path);
+        }
 
+    }
+
+    public void ShowConnections()
+    {
+        //TODO
     }
 
     public void OnDrawGizmos()
@@ -65,14 +78,16 @@ public class TileAStar : MonoBehaviour
         if(drawPath)
         {
             Gizmos.color = Color.blue;
-            Gizmos.DrawSphere(path[0].fromNode, tileGraph.tileSize.x);
-            foreach(BaseConnection<Vector3> con in path)
+            if(path[0].fromNode != null)
+                Gizmos.DrawSphere(path[0].fromNode, tileGraph.tileExtents.x);
+
+            foreach (BaseConnection<Vector3> con in path)
             {
 
                 Gizmos.color = Color.black;
                 Gizmos.DrawLine(con.fromNode, con.toNode);
                 Gizmos.color = Color.blue;
-                Gizmos.DrawSphere(con.toNode, tileGraph.tileSize.x);
+                Gizmos.DrawSphere(con.toNode, tileGraph.tileExtents.x);
             }
         }
     }

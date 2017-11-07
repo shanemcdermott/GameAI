@@ -19,6 +19,14 @@ public class AStarEditor : Editor {
         {
             world.Iterate();
         }
+        if(GUILayout.Button("Show Connections"))
+        {
+            world.ShowConnections();
+        }
+        if(GUILayout.Button("Restart"))
+        {
+            world.Restart();
+        }
         /*
         if (GUILayout.Button("Subdivide"))
         {

@@ -5,7 +5,7 @@ using UnityEngine;
 public class AStar<T> 
 {
 
-    public NodeRecord<T> startRecord;
+
     public NodeRecord<T> current;
     public IGraph<T> graph;
     public T start;
@@ -14,60 +14,65 @@ public class AStar<T>
 
     public PathfindingList<T> pathFindingList;
 
+
     public virtual List<BaseConnection<T>> PathFind(IGraph<T> graph, T start, T end, Heuristic<T> heuristic)
     {
         Init(graph, start, end, heuristic);
 
-        current = startRecord;
-        while (Iterate(1))
-        {}
 
-        if (!current.node.Equals(end))
+        while (pathFindingList.NumOpen() > 0)
         {
-            return null;
-        }
-        else
-        {
-            List<BaseConnection<T>> path = new List<BaseConnection<T>>();
-            while (!current.node.Equals(start))
+            //if ProcessNodes returns true, the goal was found.
+            if (ProcessNodes(1))
             {
-                path.Add(current.connection);
-                current = pathFindingList.GetNodeRecord(current.connection.GetFromNode());
+                return GetPath();
             }
-
-            path.Reverse();
-            return path;
         }
+
+        //If we made it to here, no path was found.
+        return null;
     }
 
+    /// <summary>
+    /// Initializes the pathfinding list and assigns all necessary variables.
+    /// </summary>
+    /// <param name="graph"></param>
+    /// <param name="start"></param>
+    /// <param name="end"></param>
+    /// <param name="heuristic"></param>
     public virtual void Init(IGraph<T> graph, T start, T end, Heuristic<T> heuristic)
     {
         this.graph = graph;
         this.start = start;
         this.end = end;
         this.heuristic = heuristic;
-        //Initialize the record for the start node.
-        startRecord = new NodeRecord<T>();
-        startRecord.node = start;
-        startRecord.connection = null;
-        startRecord.costSoFar = 0;
-        startRecord.estimatedTotalCost = heuristic.Estimate(start);
-        startRecord.category = NodeCategory.Open;
-
+        
         //Initialize the open and closed lists
         pathFindingList = new PathfindingList<T>();
         pathFindingList.Build(graph, start, end, heuristic);
+        this.current = pathFindingList.SmallestElement();
         //pathFindingList[start] = startRecord;
 
     }
 
-    public virtual bool Iterate(int numIterations)
+    /// <summary>
+    /// Process open nodes in search of the goal.
+    /// </summary>
+    /// <param name="numNodes">
+    /// Number of open nodes to consider.
+    /// </param>
+    /// <return>
+    /// Returns true if goal was found.
+    /// </return>
+    public virtual bool ProcessNodes(int numNodes)
     {
-        int counter = 0;
-        while (pathFindingList.NumOpen() > 0 && counter++ < numIterations)
+     
+        for (int i = 0; i < numNodes && pathFindingList.HasOpenNodes(); i++)
         {
-            current = pathFindingList.SmallestElement(NodeCategory.Open, heuristic);
-            if (current.node.Equals(end)) break;
+            //Get the smallest open node in the list.
+            current = pathFindingList.SmallestElement();
+
+            if (IsGoal(current)) return true;
 
             IConnection<T>[] links;
             graph.GetConnections(current.node, out links);
@@ -75,9 +80,11 @@ public class AStar<T>
             foreach (IConnection<T> con in links)
             {
                 T endNode = con.GetToNode();
+                NodeRecord<T> endNodeRecord = pathFindingList.GetNodeRecord(endNode);
+
                 float endNodeCost = current.costSoFar + con.GetCost();
                 float endNodeHeuristic = 0f;
-                NodeRecord<T> endNodeRecord = pathFindingList.GetNodeRecord(endNode);
+                
 
                 if (endNodeRecord.category == NodeCategory.Closed)
                 {
@@ -109,7 +116,31 @@ public class AStar<T>
             //so mark it as closed.
             current.category = NodeCategory.Closed;
             pathFindingList.UpdateRecord(current);
+
         }
-        return pathFindingList.NumOpen() > 0;
+
+        return false;
+    }
+
+
+    public List<BaseConnection<T>> GetPath()
+    {
+        List<BaseConnection<T>> path = new List<BaseConnection<T>>();
+        NodeRecord<T> record = new NodeRecord<T>();
+        record.node = current.node;
+        record.connection = current.connection;
+        while (!record.node.Equals(start))
+        {
+            path.Add(record.connection);
+            record = pathFindingList.GetNodeRecord(record.connection.GetFromNode());
+        }
+
+        path.Reverse();
+        return path;
+    }
+
+    public bool IsGoal(NodeRecord<T> nodeRecord)
+    {
+        return nodeRecord.node.Equals(end);
     }
 }
