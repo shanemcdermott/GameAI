@@ -2,97 +2,78 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TileAStar<T> : MonoBehaviour
+public class TileAStar : MonoBehaviour
 {
+    public TileGraph tileGraph;
+    public Transform start;
+    public Transform goal;
+    public int numIterations = 1;
 
-    public NodeRecord<T> startRecord;
-    private PathfindingList<T> pathFindingList;
+    public bool drawGraph = true;
+    public bool drawPath = false;
 
-    public virtual List<BaseConnection<T>> PathFind(IGraph<T> graph, T start, T end, Heuristic<T> heuristic)
+    private AStar<Vector3> astar = new AStar<Vector3>();
+    private List<BaseConnection<Vector3>> path;
+
+    public void FindPath()
     {
-        //Initialize the record for the start node.
-        startRecord = new NodeRecord<T>();
-        startRecord.node = start;
-        startRecord.connection = null;
-        startRecord.costSoFar = 0;
-        startRecord.estimatedTotalCost = heuristic.Estimate(start);
-        startRecord.category = NodeCategory.Open;
-
-        //Initialize the open and closed lists
-        pathFindingList = new PathfindingList<T>();
-        pathFindingList.Build(graph, start, end, heuristic);
-        //pathFindingList[start] = startRecord;
-
-
-        NodeRecord<T> current = startRecord;
-
-        while (true)//lengthopen>0)
+        if(astar == null)
         {
-   
-            current = pathFindingList.SmallestElement(NodeCategory.Open, heuristic);
-            if (current.node.Equals(end)) break;
-
-            IConnection<T>[] links;
-            graph.GetConnections(current.node, out links);
-
-            foreach (IConnection<T> con in links)
-            {
-                T endNode = con.GetToNode();
-                float endNodeCost = current.costSoFar + con.GetCost();
-                float endNodeHeuristic = 0f;
-                NodeRecord<T> endNodeRecord = pathFindingList.GetNodeRecord(endNode);
-
-                if (endNodeRecord.category == NodeCategory.Closed)
-                {
-                    if (endNodeRecord.costSoFar <= endNodeCost)
-                        continue;
-
-                    endNodeHeuristic = endNodeRecord.estimatedTotalCost - endNodeRecord.costSoFar;
-
-                }
-                else if (endNodeRecord.category == NodeCategory.Open)
-                {
-                    if (endNodeRecord.costSoFar <= endNodeCost) continue;
-
-                    endNodeHeuristic = endNodeRecord.estimatedTotalCost - endNodeRecord.costSoFar;
-                }
-                else
-                {
-                    endNodeHeuristic = heuristic.Estimate(endNode);
-                }
-
-                endNodeRecord.costSoFar = endNodeCost;
-                endNodeRecord.connection = (BaseConnection<T>)con;
-                endNodeRecord.estimatedTotalCost = endNodeCost + endNodeHeuristic;
-                endNodeRecord.category = NodeCategory.Open;
-                pathFindingList.Update(endNodeRecord);
-
-
-
-            }
-
-            //We've finished looking at the connections for the current node,
-            //so mark it as closed.
-            current.category = NodeCategory.Closed;
-            pathFindingList.Update(current);
+            astar = new AStar<Vector3>();
+            astar.Init(tileGraph, start.position, goal.position, new EuclideanHeuristic(this.goal.position));
+        }
+        
+        path = astar.PathFind(tileGraph, start.position, goal.position, new EuclideanHeuristic(this.goal.position));
+        if(path != null)
+        {
+            Debug.Log("Found Path: " + path);
 
         }
+    }
 
-        if (!current.node.Equals(end))
+    public void Iterate()
+    {
+        if (astar == null)
         {
-            return null;
+            astar = new AStar<Vector3>();
         }
-        else
+        if(astar.pathFindingList == null)
         {
-            List<BaseConnection<T>> path = new List<BaseConnection<T>>();
-            while (!current.node.Equals(start))
-            {
-                path.Add(current.connection);
-                current = pathFindingList.GetNodeRecord(current.connection.GetFromNode());
-            }
+            astar.Init(tileGraph, start.position, goal.position, new EuclideanHeuristic(this.goal.position));
+        }
 
-            path.Reverse();
-            return path;
+        astar.Iterate(numIterations);
+
+        path = new List<BaseConnection<Vector3>>();
+        NodeRecord<Vector3> record = astar.current;
+        while (!record.node.Equals(start) && record.node != null)
+        {
+            path.Add(record.connection);
+            record = astar.pathFindingList.GetNodeRecord(record.connection.GetFromNode());
+        }
+
+        path.Reverse();
+
+    }
+
+    public void OnDrawGizmos()
+    {
+        if(drawGraph)
+        {
+            tileGraph.Draw();
+        }
+        if(drawPath)
+        {
+            Gizmos.color = Color.blue;
+            Gizmos.DrawSphere(path[0].fromNode, tileGraph.tileSize.x);
+            foreach(BaseConnection<Vector3> con in path)
+            {
+
+                Gizmos.color = Color.black;
+                Gizmos.DrawLine(con.fromNode, con.toNode);
+                Gizmos.color = Color.blue;
+                Gizmos.DrawSphere(con.toNode, tileGraph.tileSize.x);
+            }
         }
     }
 

@@ -5,6 +5,11 @@ using UnityEngine;
 public class EuclideanHeuristic : Heuristic<Vector3>
 {
 
+    public EuclideanHeuristic(Vector3 goal)
+    {
+        this.goal = goal;
+    }
+
     /// <summary>
     /// Returns Euclidean distance between given node and goal node.
     /// </summary>
