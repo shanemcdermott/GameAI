@@ -6,19 +6,43 @@ using UnityEngine;
 public class TileGraph : MonoBehaviour, IGraph<Vector3>
 {
     public Vector3 tileSize = new Vector3(1.0f, 0.5f, 1.0f);
-    public Vector3 graphSize = new Vector3(20,1,20);
+    public int numX = 10;
+    public int numY = 10; 
 
     public Vector3 tileExtents;
-    public Vector3 graphExtents;
-
-    private int blockingMask;
+    public String[] blocking;
 
     public void Awake()
     {
         Vector3 half = new Vector3(0.5f, 0.5f, 0.5f);
         tileExtents = Vector3.Scale(tileSize, half);
-        graphExtents = Vector3.Scale(graphSize, half);
-        blockingMask =  LayerMask.NameToLayer("Blocking");
+    }
+
+    public void CreateGraph()
+    {
+
+        if (tileSize.x == 0 || tileSize.y == 0 || tileSize.z == 0) return;
+
+        Vector3 half = new Vector3(0.5f, 0.5f, 0.5f);
+        tileExtents = Vector3.Scale(tileSize, half);
+
+        Vector3 min = transform.position - Vector3.Scale(tileSize, new Vector3(numX / 2, 0, numY / 2));
+
+        Vector3 tile = WorldToTileCenter(min + tileExtents);
+
+
+        for (float x = 0; x < numX; x++)
+        {
+            for (float z = 0; z < numY; z++)
+            {
+
+                Vector3 center = new Vector3(tile.x + x * tileSize.x, tile.y, tile.z + z * tileSize.z);
+                BoxCollider box = gameObject.AddComponent<BoxCollider>();
+                box.extents = tileExtents;
+                box.center = center;
+
+            }
+        }
     }
 
     public Vector2 WorldToTile(Vector3 worldPosition)
@@ -74,8 +98,11 @@ public class TileGraph : MonoBehaviour, IGraph<Vector3>
                 //Vector2 tileNode = new Vector2(fromTile.x + x, fromTile.y + z);
                 //Vector3 worldNode = TileToWorld(tileNode);
                 Vector3 worldNode = new Vector3(fromNode.x + (x * tileSize.x), fromNode.y, fromNode.z + (z * tileSize.z));
-                Collider[] hits = Physics.OverlapBox(worldNode, tileExtents);
-                if (hits.Length == 0)
+
+
+                Collider[] hits = Physics.OverlapBox(worldNode, tileExtents, Quaternion.identity, LayerMask.GetMask(blocking));
+
+                if (hits.Length ==0)
                     results.Add(worldNode);
             }
 
@@ -93,25 +120,22 @@ public class TileGraph : MonoBehaviour, IGraph<Vector3>
     public void Draw()
     {
 
-        if (tileSize.x == 0 || tileSize.y == 0 || tileSize.z == 0 || graphSize.x == 0 || graphSize.y == 0 || graphSize.z == 0) return;
+        if (tileSize.x == 0 || tileSize.y == 0 || tileSize.z == 0) return;
 
         Vector3 half = new Vector3(0.5f, 0.5f, 0.5f);
         tileExtents = Vector3.Scale(tileSize, half);
-        graphExtents = Vector3.Scale(graphSize, half);
 
-        Vector3 min = new Vector3(transform.position.x - graphExtents.x, transform.position.y - graphExtents.y, transform.position.z - graphExtents.z);
-        Vector3 max = new Vector3(transform.position.x + graphExtents.x, transform.position.y + graphExtents.y, transform.position.z + graphExtents.z);
-       
+        Vector3 min = transform.position - Vector3.Scale(tileSize, new Vector3(numX / 2, 0, numY / 2));
         Vector3 tile = WorldToTileCenter(min + tileExtents);
 
        
-        for (float x = 0; x < graphSize.x; x += tileSize.x)
+        for (float x = 0; x < numX; x ++)
         {
-            for(float z = 0; z < graphSize.z; z+= tileSize.z)
+            for (float z = 0; z < numY; z++)
             {
 
-                Vector3 center = new Vector3(tile.x + x, tile.y, tile.z + z);
-                Collider[] hits = Physics.OverlapBox(center, tileExtents);
+                Vector3 center = new Vector3(tile.x + x * tileSize.x, tile.y, tile.z + z * tileSize.z);
+                Collider[] hits = Physics.OverlapBox(center, tileExtents, Quaternion.identity, LayerMask.GetMask(blocking));
                 if (hits.Length == 0)
                     Gizmos.color = Color.green;
                 else
@@ -143,7 +167,5 @@ public class TileGraph : MonoBehaviour, IGraph<Vector3>
 
         }
         */
-        Gizmos.color = Color.blue;
-        Gizmos.DrawWireCube(transform.position, graphSize);
     }
 }

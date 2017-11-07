@@ -66,7 +66,12 @@ public class TileAStar : MonoBehaviour
 
     public void ShowConnections()
     {
-        //TODO
+        BoxCollider[] children = tileGraph.GetComponents<BoxCollider>();
+        foreach(BoxCollider box in children)
+        {
+            DestroyImmediate(box);
+        }
+       // tileGraph.CreateGraph();
     }
 
     public void OnDrawGizmos()
