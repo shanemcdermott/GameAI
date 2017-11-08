@@ -12,15 +12,15 @@ public class AStar<T>
     public T end;
     public Heuristic<T> heuristic;
 
-    public PathfindingList<T> pathFindingList;
+    public IPathfindingList<T> pathFindingList;
 
 
-    public virtual List<BaseConnection<T>> PathFind(IGraph<T> graph, T start, T end, Heuristic<T> heuristic)
+    public virtual List<IConnection<T>> PathFind(IGraph<T> graph, T start, T end, Heuristic<T> heuristic)
     {
         Init(graph, start, end, heuristic);
 
 
-        while (pathFindingList.NumOpen() > 0)
+        while (pathFindingList.NumOpenRecords() > 0)
         {
             //if ProcessNodes returns true, the goal was found.
             if (ProcessNodes(1))
@@ -49,7 +49,14 @@ public class AStar<T>
         
         //Initialize the open and closed lists
         pathFindingList = new PathfindingList<T>();
-        pathFindingList.Build(graph, start, end, heuristic);
+        NodeRecord<T> startRecord = new NodeRecord<T>(
+            start,
+            null,
+            0,
+            heuristic.Estimate(start),
+            NodeCategory.Open);
+
+        pathFindingList.AddRecord(startRecord);
         this.current = pathFindingList.SmallestElement();
         //pathFindingList[start] = startRecord;
 
@@ -67,7 +74,7 @@ public class AStar<T>
     public virtual bool ProcessNodes(int numNodes)
     {
      
-        for (int i = 0; i < numNodes && pathFindingList.HasOpenNodes(); i++)
+        for (int i = 0; i < numNodes && pathFindingList.NumOpenRecords() >0; i++)
         {
             //Get the smallest open node in the list.
             current = pathFindingList.SmallestElement();
@@ -80,7 +87,7 @@ public class AStar<T>
             foreach (IConnection<T> con in links)
             {
                 T endNode = con.GetToNode();
-                NodeRecord<T> endNodeRecord = pathFindingList.GetNodeRecord(endNode);
+                NodeRecord<T> endNodeRecord = pathFindingList.FindNodeRecord(endNode);
 
                 float endNodeCost = current.costSoFar + con.GetCost();
                 float endNodeHeuristic = 0f;
@@ -123,16 +130,16 @@ public class AStar<T>
     }
 
 
-    public List<BaseConnection<T>> GetPath()
+    public List<IConnection<T>> GetPath()
     {
-        List<BaseConnection<T>> path = new List<BaseConnection<T>>();
+        List<IConnection<T>> path = new List<IConnection<T>>();
         NodeRecord<T> record = new NodeRecord<T>();
         record.node = current.node;
         record.connection = current.connection;
         while (!record.node.Equals(start))
         {
             path.Add(record.connection);
-            record = pathFindingList.GetNodeRecord(record.connection.GetFromNode());
+            record = pathFindingList.FindNodeRecord(record.connection.GetFromNode());
         }
 
         path.Reverse();

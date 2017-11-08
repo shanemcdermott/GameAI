@@ -1,38 +1,21 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PathfindingList<T> : MonoBehaviour
+public class PathfindingList<T> : MonoBehaviour, IPathfindingList<T>
 {
-    private List<NodeRecord<T>> contents;
+    private List<NodeRecord<T>> contents = new List<NodeRecord<T>>();
     private int openCount;
     private int smallestIndex;
-    private T start;
-    private T goal;
 
-    public virtual void Build(IGraph<T> graph, T start, T end, Heuristic<T> heuristic)
-    {
-        contents = new List<NodeRecord<T>>();
-        openCount = 1;
-        smallestIndex = 0;
-        this.start = start;
-        this.goal = end;
-        NodeRecord<T> startRecord = new NodeRecord<T>(
-            start,
-            null,
-            0,
-            heuristic.Estimate(start),
-            NodeCategory.Open);
 
-        contents.Add(startRecord);
-       
-    }
 
     /// <summary>
     /// Adds the record to the list.
     /// </summary>
     /// <param name="record">The record to add.</param>
-    public virtual void Add(NodeRecord<T> record)
+    public void AddRecord(NodeRecord<T> record)
     {
         contents.Add(record);
         if (record.category == NodeCategory.Open)
@@ -41,12 +24,13 @@ public class PathfindingList<T> : MonoBehaviour
             smallestIndex = contents.Count - 1;
     }
 
-    public virtual void UpdateRecord(NodeRecord<T> record)
+    //BUGGY
+    public void UpdateRecord(NodeRecord<T> record)
     {
         int index = FindRecordIndex(record.node);
         if (index == -1)
         {
-            Add(record);
+            AddRecord(record);
         }
         else
         {
@@ -64,7 +48,7 @@ public class PathfindingList<T> : MonoBehaviour
         }
     }
 
-    public virtual void CloseRecord(T node)
+    public void CloseRecord(T node)
     {
         int i = FindRecordIndex(node);
         if (i != -1)
@@ -73,8 +57,8 @@ public class PathfindingList<T> : MonoBehaviour
             if (record.category == NodeCategory.Open)
                 openCount--;
 
-            if (record.estimatedTotalCost < contents[smallestIndex].estimatedTotalCost)
-                smallestIndex = i;
+            if (i == smallestIndex)
+                FindSmallest();
 
             record.category = NodeCategory.Closed;
             contents[i] = record;
@@ -94,7 +78,7 @@ public class PathfindingList<T> : MonoBehaviour
         return contents[smallestIndex];
     }
     
-    public int NumOpen()
+    public int NumOpenRecords()
     {
         return openCount;
     }
@@ -102,6 +86,12 @@ public class PathfindingList<T> : MonoBehaviour
     public bool HasOpenNodes()
     {
         return openCount > 0;
+    }
+
+    public bool ContainsNodeRecord(T node)
+    {
+        int i = FindRecordIndex(node);
+        return i != -1;
     }
 
     private int FindRecordIndex(T node)
@@ -116,14 +106,13 @@ public class PathfindingList<T> : MonoBehaviour
         return -1;
     }
 
-    public NodeRecord<T> GetNodeRecord(T node)
+    public NodeRecord<T> FindNodeRecord(T node)
     {
-        for(int i = 0; i < contents.Count; i++)
-        {
-            if (contents[i].node.Equals(node))
-                return contents[i];
-        }
-        return new NodeRecord<T>();
+        int i = FindRecordIndex(node);
+        if (i == -1)
+            return new NodeRecord<T>(node);
+        else
+            return contents[i];
     }
-  
+
 }

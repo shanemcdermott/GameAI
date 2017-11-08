@@ -44,6 +44,22 @@ public interface IConnection<T>
     T GetToNode();
 }
 
+public interface IPathfindingList<T>
+{
+    void AddRecord(NodeRecord<T> record);
+    void UpdateRecord(NodeRecord<T> record);
+
+    void CloseRecord(T node);
+    NodeRecord<T> SmallestElement();
+
+    int NumOpenRecords();
+
+    NodeRecord<T> FindNodeRecord(T node);
+
+    bool ContainsNodeRecord(T node);
+
+}
+
 public enum NodeCategory
 {
     Unvisited,
@@ -54,12 +70,20 @@ public enum NodeCategory
 public struct NodeRecord<T>
 {
     public T node;
-    public BaseConnection<T> connection;
+    public IConnection<T> connection;
     public float costSoFar;
     public float estimatedTotalCost;
     public NodeCategory category;
     
-    public NodeRecord(T node, BaseConnection<T> connection, float costSoFar, float estTotalCost, NodeCategory category)
+    public NodeRecord(T node) : this()
+    {
+        this.node = node;
+        this.costSoFar = 0;
+        this.estimatedTotalCost = 0;
+        this.category = NodeCategory.Unvisited;
+    }
+
+    public NodeRecord(T node, IConnection<T> connection, float costSoFar, float estTotalCost, NodeCategory category)
     {
         this.node = node;
         this.connection = connection;
@@ -68,4 +92,49 @@ public struct NodeRecord<T>
         this.category = category;
     }
 
+}
+
+public struct IntPoint
+{
+    public int x;
+    public int y;
+
+    public IntPoint(int x, int y)
+    {
+        this.x = x;
+        this.y = y;
+    }
+
+    public IntPoint(float x, float y)
+    {
+        this.x = Mathf.FloorToInt(x);
+        this.y = Mathf.FloorToInt(y);
+    }
+
+    public IntPoint(Vector2 v)
+    {
+        this.x = Mathf.FloorToInt(v.x);
+        this.y = Mathf.FloorToInt(v.y);
+    }
+
+    public static IntPoint Add(IntPoint a, IntPoint b)
+    {
+        return IntPoint.Add(a, b.x, b.y);
+    }
+
+    public static IntPoint Add(IntPoint a, int x, int y)
+    {
+        return new IntPoint(a.x + x, a.y + y);
+    }
+
+    public override bool Equals(object obj)
+    {
+        if (!(obj is IntPoint))
+            return false;
+
+        IntPoint otherPoint = (IntPoint)obj;
+        // compare elements here
+        return x == otherPoint.x && y == otherPoint.y;
+
+    }
 }
