@@ -57,9 +57,10 @@ public class PathfindingList<T> : MonoBehaviour, IPathfindingList<T>
             if (record.category == NodeCategory.Open)
                 openCount--;
 
+            /*
             if (i == smallestIndex)
                 FindSmallest();
-
+                */
             record.category = NodeCategory.Closed;
             contents[i] = record;
             

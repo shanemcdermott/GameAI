@@ -11,21 +11,13 @@ public class AStarEditor : Editor {
         base.OnInspectorGUI();
         TileAStar world = (TileAStar)target;
 
+        if(GUILayout.Button("Initialize"))
+        {
+            world.Init();
+        }
         if(GUILayout.Button("Find Path"))
         {
             world.FindPath();
-        }
-        if(GUILayout.Button("Iterate"))
-        {
-            world.Iterate();
-        }
-        if(GUILayout.Button("Show Connections"))
-        {
-            world.ShowConnections();
-        }
-        if(GUILayout.Button("Restart"))
-        {
-            world.Restart();
         }
         /*
         if (GUILayout.Button("Subdivide"))

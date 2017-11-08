@@ -4,66 +4,69 @@ using UnityEngine;
 
 public class TileAStar : MonoBehaviour
 {
+   
+    public TileWorld tileWorld;
     public TileGraph tileGraph;
     public Transform startTransform;
     public Transform goalTransform;
     public Heuristic<IntPoint> heuristic;
     
-    public int numIterations = 1;
 
-    public bool drawGraph = false;
-    public bool drawPath = false;
 
-    public NodeRecord<IntPoint> currentRecord;
-
-    private IPathfindingList<IntPoint> nodes;
-
-    private List<BaseConnection<IntPoint>> path;
+    private List<IConnection<IntPoint>> path;
 
     private IntPoint startNode;
     private IntPoint goalNode;
 
+    private IntPoint currentNode;
+
+    private List<IntPoint> priorityNodes;
+    public int numOpenNodes;
+
     //Initialize tileGraph and clear out path
     public void Init()
     {
-        tileGraph.Init();
+        numOpenNodes = 0;
+        tileWorld.Init();
         path = null;
         startNode = tileGraph.WorldToTile(startTransform.position);
         goalNode = tileGraph.WorldToTile(goalTransform.position);
-        nodes = new PathfindingList<IntPoint>();
+        priorityNodes = new List<IntPoint>();
+        heuristic = new EuclideanHeuristic(goalNode);
 
-        NodeRecord<IntPoint> startRecord = new NodeRecord<IntPoint>(
-            startNode,
-            null,
-            0,
-            heuristic.Estimate(startNode),
-            NodeCategory.Open);
+        AddPriorityNode(startNode);
 
-        nodes.AddRecord(startRecord);
+
     }
+
+    public void Awake()
+    {
+        FindPath();
+    }
+    
 
     public void FindPath()
     {
         Init();
 
-        while(nodes.NumOpenRecords() > 0)
+        while(numOpenNodes > 0)
         {
-            currentRecord = nodes.SmallestElement();
-            //We're finished!
-            if (currentRecord.node.Equals(goalNode))
+            currentNode = GetSmallestOpenNode();
+            TileRecord currentRecord = tileWorld.nodeArray[currentNode.x, currentNode.y];
+
+            if (currentNode.Equals(goalNode))
                 break;
 
             IConnection<IntPoint>[] neighbors;
-            tileGraph.GetConnections(currentRecord.node, out neighbors);
-            
-            foreach(IConnection<IntPoint> edge in neighbors)
+            tileGraph.GetConnections(currentNode, out neighbors);
+            foreach (IConnection<IntPoint> edge in neighbors)
             {
                 IntPoint toNode = edge.GetToNode();
-                NodeRecord<IntPoint> endRecord = nodes.FindNodeRecord(toNode);
+                TileRecord endRecord = tileWorld.nodeArray[toNode.x, toNode.y];
                 float endNodeCost = currentRecord.costSoFar + edge.GetCost();
                 float endNodeHeuristic = 0f;
 
-                if(endRecord.category == NodeCategory.Closed)
+                if (endRecord.category == NodeCategory.Closed)
                 {
                     if (endRecord.costSoFar <= endNodeCost)
                         continue;
@@ -81,89 +84,88 @@ public class TileAStar : MonoBehaviour
                 }
 
                 endRecord.costSoFar = endNodeCost;
-                endRecord.connection = edge;
+                endRecord.edge = edge;
                 endRecord.estimatedTotalCost = endNodeCost + endNodeHeuristic;
                 endRecord.category = NodeCategory.Open;
-                nodes.UpdateRecord(endRecord);
+                tileWorld.nodeArray[toNode.x,toNode.y] = endRecord;
+                AddPriorityNode(toNode);
             }
 
-            currentRecord.category = NodeCategory.Closed;
-            nodes.UpdateRecord(currentRecord);
-
+            CloseNode(currentNode);
         }
+        
       
-
-        if (path != null)
+        if(currentNode.Equals(goalNode))
         {
-            Debug.Log("Found Path: " + path);
+            Debug.Log("Found Path: ");
+            path = GetPath();
         }
         else
         {
             Debug.Log("No Path Found");
+            path = null;
         }
+
+        priorityNodes = null;
+        numOpenNodes = 0;
+    }
+    
+    public void AddPriorityNode(IntPoint node)
+    {
+        priorityNodes.Add(node);
+        tileWorld.SetNodeCategory(node, NodeCategory.Open);
+        numOpenNodes++;
     }
 
-    public void Restart()
+    public void CloseNode(IntPoint node)
     {
-        astar = null;
+        priorityNodes.Remove(node);
+        tileWorld.SetNodeCategory(node, NodeCategory.Closed);
+        numOpenNodes--;
     }
 
-    public void Iterate()
+    public IntPoint GetSmallestOpenNode()
     {
-        if (astar == null)
+        float smallestCost = tileWorld.nodeArray[priorityNodes[0].x, priorityNodes[0].y].estimatedTotalCost;
+        IntPoint smallestNode = priorityNodes[0];
+        for (int i = 1; i < numOpenNodes; i++)
         {
-            astar = new AStar<Vector3>();
-        }
-        if(astar.pathFindingList == null)
-        {
-            Vector3 startPos = tileGraph.WorldToTileCenter(start.position);
-            Vector3 goalPos = tileGraph.WorldToTileCenter(goal.position);
-            astar.Init(tileGraph, startPos, goalPos, new EuclideanHeuristic(goalPos));
-        }
-
-        if(astar.ProcessNodes(numIterations))
-        {
-            Debug.Log("Found Path!");
-            
+            if(tileWorld.nodeArray[priorityNodes[i].x, priorityNodes[i].y].estimatedTotalCost < smallestCost)
+            {
+                smallestCost = tileWorld.nodeArray[priorityNodes[i].x, priorityNodes[i].y].estimatedTotalCost;
+                smallestNode = priorityNodes[i];
+            }
         }
 
-        path = astar.GetPath();
-        if(path != null)
-        {
-            Debug.Log("Current Path: " + path);
-        }
-
+        return smallestNode;
     }
 
-    public void ShowConnections()
+
+    public List<IConnection<IntPoint>> GetPath()
     {
-        BoxCollider[] children = tileGraph.GetComponents<BoxCollider>();
-        foreach(BoxCollider box in children)
+        List<IConnection<IntPoint>> result = new List<IConnection<IntPoint>>();
+        IntPoint pathNode = new IntPoint(currentNode.x,currentNode.y);
+        IConnection<IntPoint> edge = tileWorld.nodeArray[pathNode.x, pathNode.y].edge;
+        while (!pathNode.Equals(startNode))
         {
-            DestroyImmediate(box);
+            result.Add(edge);
+            pathNode = edge.GetFromNode();
+            edge = tileWorld.nodeArray[pathNode.x, pathNode.y].edge; 
         }
-       // tileGraph.CreateGraph();
+
+        result.Reverse();
+        return result;
     }
 
     public void OnDrawGizmos()
     {
-        if(drawGraph)
+        if(path != null)
         {
-            tileGraph.Draw();
-        }
-        if(drawPath)
-        {
-            Gizmos.color = Color.blue;
-            if(path[0].fromNode != null)
-                Gizmos.DrawSphere(path[0].fromNode, tileGraph.tileExtents.x);
-
-            foreach (BaseConnection<Vector3> con in path)
+            foreach(IConnection<IntPoint> edge in path)
             {
-
-                Gizmos.color = Color.black;
-                Gizmos.DrawLine(con.fromNode, con.toNode);
-                Gizmos.color = Color.blue;
-                Gizmos.DrawSphere(con.toNode, tileGraph.tileExtents.x);
+                Gizmos.color = Color.green;
+                Gizmos.DrawSphere(tileGraph.TileToWorld(edge.GetFromNode()), 0.5f * tileGraph.tileSize);
+                
             }
         }
     }

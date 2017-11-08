@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class EuclideanHeuristic : Heuristic<Vector3>
+public class EuclideanHeuristic : Heuristic<IntPoint>
 {
 
-    public EuclideanHeuristic(Vector3 goal)
+    public EuclideanHeuristic(IntPoint goal)
     {
         this.goal = goal;
     }
@@ -15,8 +15,8 @@ public class EuclideanHeuristic : Heuristic<Vector3>
     /// </summary>
     /// <param name="node"></param>
     /// <returns></returns>
-    public override float Estimate(Vector3 node)
+    public override float Estimate(IntPoint node)
     {
-        return Vector3.Distance(node, goal);
+        return IntPoint.Distance(node, goal);
     }
 }

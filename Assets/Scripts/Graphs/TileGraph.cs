@@ -59,7 +59,7 @@ public class TileGraph : MonoBehaviour, IGraph<IntPoint>
 
                 IntPoint tile = IntPoint.Add(fromNode, x, y);
               
-                if(IsTileOpen(tile))
+                if(!IsTileBlocked(tile))
                     results.Add(tile);
             }
 
@@ -73,19 +73,19 @@ public class TileGraph : MonoBehaviour, IGraph<IntPoint>
         }
     }
 
-    public bool IsTileOpen(Vector3 worldPosition)
+    public bool IsTileBlocked(Vector3 worldPosition)
     {
         Vector3 adjustedPosition = WorldToTileCenter(worldPosition);
        
         Collider[] hits = Physics.OverlapBox(adjustedPosition, tileExtents, Quaternion.identity, LayerMask.GetMask(blocking));
-        return hits.Length == 0;
+        return hits.Length > 0;
     }
 
-    public bool IsTileOpen(IntPoint tileCoords)
+    public bool IsTileBlocked(IntPoint tileCoords)
     {
         Vector3 worldNode = TileToWorld(tileCoords);
         Collider[] hits = Physics.OverlapBox(worldNode, tileExtents, Quaternion.identity, LayerMask.GetMask(blocking));
-        return hits.Length == 0;
+        return hits.Length > 0;
     }
 
 }

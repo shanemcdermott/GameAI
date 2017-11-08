@@ -127,6 +127,16 @@ public struct IntPoint
         return new IntPoint(a.x + x, a.y + y);
     }
 
+    public static float Distance(IntPoint a, IntPoint b)
+    {
+        return Vector2.Distance(a.ToVector(), b.ToVector());
+    }
+
+    public Vector2 ToVector()
+    {
+        return new Vector2(x, y);
+    }
+
     public override bool Equals(object obj)
     {
         if (!(obj is IntPoint))
@@ -137,4 +147,12 @@ public struct IntPoint
         return x == otherPoint.x && y == otherPoint.y;
 
     }
+}
+
+public struct TileRecord
+{
+    public IConnection<IntPoint> edge;
+    public float costSoFar;
+    public float estimatedTotalCost;
+    public NodeCategory category;
 }
