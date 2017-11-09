@@ -4,33 +4,33 @@ using UnityEngine;
 
 public class TileAStar : MonoBehaviour
 {
-   
+    public PathSmoother pathSmoother;
+    public bool drawUnsmoothedPath = false;
+
+    //AStar Parameters
     public TileWorld tileWorld;
     public TileGraph tileGraph;
     public Transform startTransform;
     public Transform goalTransform;
     public Heuristic<IntPoint> heuristic;
-    
 
+    //Path 
+    private List<Vector3> path;
+    private List<Vector3> smoothedPath;
 
-    private List<IConnection<IntPoint>> path;
-
+    //Tile translations of world positions
     private IntPoint startNode;
     private IntPoint goalNode;
-
     private IntPoint currentNode;
 
     private List<IntPoint> priorityNodes;
-    public int numOpenNodes;
+    private int numOpenNodes;
 
-    public void Clear()
+    public bool FindAgentPath(GameObject agent, Transform goal)
     {
-        numOpenNodes = 0;
-        tileWorld.ClearNodes();
-        path = null;
-        startNode = tileGraph.WorldToTile(startTransform.position);
-        goalNode = tileGraph.WorldToTile(goalTransform.position);
-        priorityNodes = new List<IntPoint>();
+        startTransform = agent.transform;
+        goalTransform = goal;
+        return FindPath();
     }
 
     //Initialize tileGraph and clear out path
@@ -39,6 +39,7 @@ public class TileAStar : MonoBehaviour
         numOpenNodes = 0;
         tileWorld.Init();
         path = null;
+        smoothedPath = null;
         startNode = tileGraph.WorldToTile(startTransform.position);
         goalNode = tileGraph.WorldToTile(goalTransform.position);
         priorityNodes = new List<IntPoint>();
@@ -46,25 +47,27 @@ public class TileAStar : MonoBehaviour
 
         AddPriorityNode(startNode);
 
-
-    }
-    
-    public bool FindAgentPath(GameObject agent, Transform goal)
-    {
-        startTransform = agent.transform;
-        goalTransform = goal;
-        return FindPath();
     }
 
+    /// <summary>
+    /// Performs AStar on a tile grid.
+    /// </summary>
+    /// <returns>
+    /// True if a path was found.
+    /// </returns>
     public bool FindPath()
     {
+        //Prepare the tile grid, open list, and translate world positions to tile coordinates
         Init();
 
+        //Continue searching as long as there are open nodes
         while(GetNumOpenNodes() > 0)
         {
+            //Get the smallest open node using estimated total cost
             currentNode = GetSmallestOpenNode();
             TileRecord currentRecord = tileWorld.nodeArray[currentNode.x, currentNode.y];
 
+            //If the goal is found, break out of the loop.
             if (currentNode.Equals(goalNode))
                 break;
 
@@ -109,7 +112,7 @@ public class TileAStar : MonoBehaviour
         if(currentNode.Equals(goalNode))
         {
             Debug.Log("Found Path: ");
-            path = GetPathConnections();
+            path = GetPath();
             return true;
         }
         else
@@ -118,9 +121,6 @@ public class TileAStar : MonoBehaviour
             path = null;
             return false;
         }
-
-        priorityNodes = null;
-        numOpenNodes = 0;
     }
     
     public void AddPriorityNode(IntPoint node)
@@ -142,6 +142,12 @@ public class TileAStar : MonoBehaviour
         return priorityNodes.Count;
     }
 
+    /// <summary>
+    /// Finds the smallest open node using the estimated total cost.
+    /// </summary>
+    /// <returns>
+    /// The tile coordinates of the smallest cost open node.
+    /// </returns>
     public IntPoint GetSmallestOpenNode()
     {
         
@@ -194,23 +200,58 @@ public class TileAStar : MonoBehaviour
             edge = tileWorld.nodeArray[pathNode.x, pathNode.y].edge;
             result.Add(tileGraph.TileToWorld(pathNode));
         }
-
-        //result.Add(tileGraph.TileToWorld(edge.GetFromNode()));
         result.Reverse();
         return result;
     }
 
+    public void SmoothPath()
+    {
+        if(path!= null)
+            smoothedPath = pathSmoother.SmoothPath(path);
+    }
+
+    public void Clear()
+    {
+        numOpenNodes = 0;
+        tileWorld.ClearNodes();
+        path = null;
+        smoothedPath = null;
+        startNode = tileGraph.WorldToTile(startTransform.position);
+        goalNode = tileGraph.WorldToTile(goalTransform.position);
+        priorityNodes = new List<IntPoint>();
+    }
+
+
     public void OnDrawGizmos()
     {
-        if(path != null)
+
+        if(smoothedPath != null)
         {
-            foreach(IConnection<IntPoint> edge in path)
+            foreach (Vector3 v in smoothedPath)
             {
                 Gizmos.color = Color.green;
-                Gizmos.DrawSphere(tileGraph.TileToWorld(edge.GetFromNode()), 0.5f * tileGraph.tileSize);
-                
+                Gizmos.DrawSphere(v, 0.5f * tileGraph.tileSize);
+            }
+            if (path != null && drawUnsmoothedPath)
+            {
+                foreach (Vector3 v in path)
+                {
+                    Gizmos.color = Color.yellow;
+                    Gizmos.DrawSphere(v, 0.25f * tileGraph.tileSize);
+
+                }
             }
         }
+        else if(path != null)
+        {
+             foreach (Vector3 v in path)
+             {
+                 Gizmos.color = Color.green;
+                 Gizmos.DrawSphere(v, 0.5f * tileGraph.tileSize);
+
+             }
+        }
+
     }
 
 }

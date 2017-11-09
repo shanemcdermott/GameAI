@@ -9,7 +9,10 @@ public class TileGraph : MonoBehaviour, IGraph<IntPoint>
     public float tileSize = 1.0f;
     public string[] blocking = new string[1];
 
-    private Vector3 tileExtents; 
+    public Terrain terrain;
+
+    private Vector3 tileExtents;
+    private TerrainData terrainData;
 
     public void Awake()
     {
@@ -34,6 +37,10 @@ public class TileGraph : MonoBehaviour, IGraph<IntPoint>
 
     public Vector3 TileToWorld(IntPoint tilePosition)
     {
+        if(terrainData != null)
+        {
+           Vector3 worldPoint =  new Vector3(tilePosition.x * tileSize, terrainData.GetHeight(tilePosition.x,tilePosition.y), tilePosition.y * tileSize);
+        }
         return new Vector3(tilePosition.x * tileSize, transform.position.y, tilePosition.y * tileSize);
     }
 
@@ -62,7 +69,15 @@ public class TileGraph : MonoBehaviour, IGraph<IntPoint>
                 if(!IsTileBlocked(tile))
                 {
                     BaseConnection<IntPoint> connection = new BaseConnection<IntPoint>(fromNode, tile);
-                    connection.cost = IntPoint.Distance(fromNode, tile);
+                    if (terrainData != null)
+                    {
+                        Vector3 w = TileToWorld(tile);
+                        connection.cost = terrainData.GetSteepness(w.x, w.z);
+                    }
+                    else
+                    {
+                        connection.cost = IntPoint.Distance(fromNode, tile);
+                    }
                     connections.Add(connection);
                 }
                     

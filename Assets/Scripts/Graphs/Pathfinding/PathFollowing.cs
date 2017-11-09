@@ -9,11 +9,15 @@ public class PathFollowing : MonoBehaviour
     public TileAStar pathFinder;
     public float speed = 0.5f;
     public Transform goal;
+
     public List<Vector3> path = new List<Vector3>();
     public int pathIndex = -1;
-    public bool needsPath = true;
-    public bool shouldMove = false;
+
     public float acceptableDistance = 0.25f;
+
+    public bool needsPath = true;
+    public bool usesSmoothing = true;
+    public bool shouldMove = false;
 
     // Use this for initialization
     void Start ()
@@ -23,6 +27,11 @@ public class PathFollowing : MonoBehaviour
             if(pathFinder.FindAgentPath(gameObject, goal))
             {
                 path = pathFinder.GetPath();
+                if (usesSmoothing)
+                {
+                    path = pathFinder.pathSmoother.SmoothPath(path);
+                }
+                
                 StartPath();
             }
         }
@@ -47,12 +56,10 @@ public class PathFollowing : MonoBehaviour
                 if(pathIndex>=path.Count)
                 {
                     shouldMove = false;
-                    needsPath = true;
                     return;
                 }
             }
-            transform.root.position = Vector3.MoveTowards(transform.root.position, path[pathIndex], speed);
-
+            transform.root.position = Vector3.MoveTowards(transform.root.position, path[pathIndex], Time.deltaTime * speed);
         }
 	}
 }

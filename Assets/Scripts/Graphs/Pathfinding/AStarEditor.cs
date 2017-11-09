@@ -19,6 +19,10 @@ public class AStarEditor : Editor {
         {
             world.FindPath();
         }
+        if(GUILayout.Button("Smooth Path"))
+        {
+            world.SmoothPath();
+        }
         /*
         if (GUILayout.Button("Subdivide"))
         {
