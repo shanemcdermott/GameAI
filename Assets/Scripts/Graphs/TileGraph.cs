@@ -14,7 +14,7 @@ public class TileGraph : MonoBehaviour, IGraph<IntPoint>
     public Terrain terrain;
 
     private Vector3 tileExtents;
-    private TerrainData terrainData;
+
 
     public void Awake()
     {
