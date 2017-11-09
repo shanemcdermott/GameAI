@@ -23,7 +23,9 @@ public class PathSmoother : MonoBehaviour
         List<Vector3> outputPath = new List<Vector3>();
         outputPath.Add(inputPath[0]);
 
-
+        string[] masks = new string[1];
+        masks[0] = "Blocking";
+        int mask = LayerMask.GetMask(masks);
         //Keep track of where we are in the input path.
         //We start at the third node, because we assume two adjacent nodes will pass the ray cast.
         for(int inputIndex = 2; inputIndex < inputPath.Count -1; inputIndex++)
@@ -32,7 +34,7 @@ public class PathSmoother : MonoBehaviour
             float distance = Vector3.Distance(inputPath[inputIndex], outputPath[outputPath.Count-1]);
             
             //Perform a raycast from the current point to the previous output point. 
-            if(Physics.Raycast(inputPath[inputIndex],direction, distance))
+            if(Physics.Raycast(inputPath[inputIndex],direction, distance,mask))
             {
                 //There's not a clear line between these points, so add the previous node to the output.
                 outputPath.Add(inputPath[inputIndex-1]);

@@ -95,14 +95,16 @@ public class TileGraph : MonoBehaviour, IGraph<IntPoint>
                 if(!IsTileBlocked(tile))
                 {
                     BaseConnection<IntPoint> connection = new BaseConnection<IntPoint>(fromNode, tile);
-                    connection.cost = IntPoint.Distance(fromNode, tile);
+
+                    connection.cost = Vector3.Distance(TileToWorld(fromNode), TileToWorld(tile));
+                    /*connection.cost = IntPoint.Distance(fromNode, tile);
                     if (terrainData != null)
                     {
 
                         float gradient = heightValues[tile.x, tile.y] / fromNodeHeight;
                         connection.cost *= gradient;
                     }
-
+                    */
                     connections.Add(connection);
                 }
                     
