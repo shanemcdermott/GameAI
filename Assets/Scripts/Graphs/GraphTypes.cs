@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+
 public interface IGraph<T>
 {
     /// <summary>
@@ -10,16 +11,7 @@ public interface IGraph<T>
     /// </summary>
     /// <param name="fromNode">The node whose connections to return.</param>
     /// <param name="connections">The connections to return.</param>
-    void GetConnections(T fromNode, out IConnection<T>[] connections);
-}
-
-public interface IHasConnections<K,V> where V : IConnection<K>
-{
-    /// <summary>
-    /// Returns an array of outgoing connections (implementing IConnection)
-    /// </summary>
-    /// <param name="connections"></param>
-    void GetConnections(out V[] connections);
+    void GetConnections(T fromNode, out List<IConnection<T>> connections);
 }
 
 //Connection between nodes of type T
@@ -44,22 +36,6 @@ public interface IConnection<T>
     T GetToNode();
 }
 
-public interface IPathfindingList<T>
-{
-    void AddRecord(NodeRecord<T> record);
-    void UpdateRecord(NodeRecord<T> record);
-
-    void CloseRecord(T node);
-    NodeRecord<T> SmallestElement();
-
-    int NumOpenRecords();
-
-    NodeRecord<T> FindNodeRecord(T node);
-
-    bool ContainsNodeRecord(T node);
-
-}
-
 public enum NodeCategory
 {
     Unvisited,
@@ -67,32 +43,6 @@ public enum NodeCategory
     Closed
 }
 
-public struct NodeRecord<T>
-{
-    public T node;
-    public IConnection<T> connection;
-    public float costSoFar;
-    public float estimatedTotalCost;
-    public NodeCategory category;
-    
-    public NodeRecord(T node) : this()
-    {
-        this.node = node;
-        this.costSoFar = 0;
-        this.estimatedTotalCost = 0;
-        this.category = NodeCategory.Unvisited;
-    }
-
-    public NodeRecord(T node, IConnection<T> connection, float costSoFar, float estTotalCost, NodeCategory category)
-    {
-        this.node = node;
-        this.connection = connection;
-        this.costSoFar = costSoFar;
-        this.estimatedTotalCost = estTotalCost;
-        this.category = category;
-    }
-
-}
 
 public struct IntPoint
 {

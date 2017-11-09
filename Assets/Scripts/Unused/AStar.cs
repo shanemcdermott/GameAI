@@ -81,7 +81,7 @@ public class AStar<T>
 
             if (IsGoal(current)) return true;
 
-            IConnection<T>[] links;
+            List<IConnection<T>> links;
             graph.GetConnections(current.node, out links);
 
             foreach (IConnection<T> con in links)

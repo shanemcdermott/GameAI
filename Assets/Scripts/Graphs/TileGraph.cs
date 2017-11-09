@@ -47,9 +47,9 @@ public class TileGraph : MonoBehaviour, IGraph<IntPoint>
     /// </summary>
     /// <param name="fromNode">The tile coordinates of the node to find connections for.</param>
     /// <param name="connections">The resulting set of connections</param>
-    public void GetConnections(IntPoint fromNode, out IConnection<IntPoint>[] connections)
+    public void GetConnections(IntPoint fromNode, out List<IConnection<IntPoint>> connections)
     {
-        List<IntPoint> results = new List<IntPoint>();
+        connections = new List<IConnection<IntPoint>>();
         
         for (int x = -1; x <= 1; x += 1)
         {
@@ -60,16 +60,14 @@ public class TileGraph : MonoBehaviour, IGraph<IntPoint>
                 IntPoint tile = IntPoint.Add(fromNode, x, y);
               
                 if(!IsTileBlocked(tile))
-                    results.Add(tile);
+                {
+                    BaseConnection<IntPoint> connection = new BaseConnection<IntPoint>(fromNode, tile);
+                    connection.cost = IntPoint.Distance(fromNode, tile);
+                    connections.Add(connection);
+                }
+                    
             }
 
-        }
-        
-        connections = new IConnection<IntPoint>[results.Count];
-        for (int i = 0; i < results.Count; i++)
-        {
-            BaseConnection<IntPoint> connection = new BaseConnection<IntPoint>(fromNode, results[i]);
-            connections[i] = connection;
         }
     }
 

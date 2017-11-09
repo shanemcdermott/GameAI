@@ -68,7 +68,7 @@ public class TileAStar : MonoBehaviour
             if (currentNode.Equals(goalNode))
                 break;
 
-            IConnection<IntPoint>[] neighbors;
+            List<IConnection<IntPoint>> neighbors;
             tileGraph.GetConnections(currentNode, out neighbors);
             foreach (IConnection<IntPoint> edge in neighbors)
             {
