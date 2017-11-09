@@ -87,6 +87,11 @@ public struct IntPoint
         return new Vector2(x, y);
     }
 
+    public override string ToString()
+    {
+        return "(" + x + "," + y + ")";
+    }
+
     public override bool Equals(object obj)
     {
         if (!(obj is IntPoint))

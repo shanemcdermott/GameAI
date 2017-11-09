@@ -7,7 +7,9 @@ public class TileGraph : MonoBehaviour, IGraph<IntPoint>
 {
     //Size of each tile
     public float tileSize = 1.0f;
+    public Vector3 graphSize = new Vector3(40, 1, 40);
     public string[] blocking = new string[1];
+    public float[,] heightValues;
 
     public Terrain terrain;
 
@@ -23,6 +25,29 @@ public class TileGraph : MonoBehaviour, IGraph<IntPoint>
     {
         tileExtents = new Vector3(tileSize * 0.5f, tileSize * 0.5f, tileSize * 0.5f);
         blocking[0] = "Blocking";
+        InitHeightField();
+    }
+
+    
+
+    public void InitHeightField()
+    {
+        IntPoint numTiles = WorldToTile(graphSize);
+        heightValues = new float[numTiles.x, numTiles.y];
+
+        for (IntPoint tile = new IntPoint(0, 0); tile.x < numTiles.x; tile.x++)
+        {
+            for (tile.y = 0; tile.y < numTiles.y; tile.y++)
+            {
+                
+                if(terrain != null)
+                    heightValues[tile.x, tile.y] = terrain.SampleHeight(TileToWorld(tile)); 
+                else
+                    heightValues[tile.x, tile.y] = transform.position.y;
+                //if (heightValues[tile.x, tile.y] != 0)
+                //    Debug.Log("Tile " + tile + " has a height of " + heightValues[tile.x, tile.y]);
+            }
+        }
     }
 
     public IntPoint WorldToTile(Vector2 worldPosition)
@@ -37,11 +62,9 @@ public class TileGraph : MonoBehaviour, IGraph<IntPoint>
 
     public Vector3 TileToWorld(IntPoint tilePosition)
     {
-        if(terrainData != null)
-        {
-           Vector3 worldPoint =  new Vector3(tilePosition.x * tileSize, terrainData.GetHeight(tilePosition.x,tilePosition.y), tilePosition.y * tileSize);
-        }
-        return new Vector3(tilePosition.x * tileSize, transform.position.y, tilePosition.y * tileSize);
+        return new Vector3(tilePosition.x * tileSize, heightValues[tilePosition.x, tilePosition.y], tilePosition.y * tileSize);
+
+        //return new Vector3(tilePosition.x * tileSize, transform.position.y, tilePosition.y * tileSize);
     }
 
     public Vector3 WorldToTileCenter(Vector3 worldPosition)
@@ -57,7 +80,10 @@ public class TileGraph : MonoBehaviour, IGraph<IntPoint>
     public void GetConnections(IntPoint fromNode, out List<IConnection<IntPoint>> connections)
     {
         connections = new List<IConnection<IntPoint>>();
-        
+
+        float fromNodeHeight = heightValues[fromNode.x, fromNode.y];
+        if (fromNodeHeight == 0)
+            fromNodeHeight = 0.01f;
         for (int x = -1; x <= 1; x += 1)
         {
             for (int y = -1; y <= 1; y += 1)
@@ -69,15 +95,14 @@ public class TileGraph : MonoBehaviour, IGraph<IntPoint>
                 if(!IsTileBlocked(tile))
                 {
                     BaseConnection<IntPoint> connection = new BaseConnection<IntPoint>(fromNode, tile);
+                    connection.cost = IntPoint.Distance(fromNode, tile);
                     if (terrainData != null)
                     {
-                        Vector3 w = TileToWorld(tile);
-                        connection.cost = terrainData.GetSteepness(w.x, w.z);
+
+                        float gradient = heightValues[tile.x, tile.y] / fromNodeHeight;
+                        connection.cost *= gradient;
                     }
-                    else
-                    {
-                        connection.cost = IntPoint.Distance(fromNode, tile);
-                    }
+
                     connections.Add(connection);
                 }
                     

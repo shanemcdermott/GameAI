@@ -213,6 +213,7 @@ public class TileAStar : MonoBehaviour
     public void Clear()
     {
         numOpenNodes = 0;
+        tileGraph.Init();
         tileWorld.ClearNodes();
         path = null;
         smoothedPath = null;

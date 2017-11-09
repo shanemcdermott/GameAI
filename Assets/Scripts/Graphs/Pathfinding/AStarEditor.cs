@@ -23,6 +23,7 @@ public class AStarEditor : Editor {
         {
             world.SmoothPath();
         }
+
         /*
         if (GUILayout.Button("Subdivide"))
         {

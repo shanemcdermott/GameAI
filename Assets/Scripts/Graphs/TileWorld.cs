@@ -5,7 +5,6 @@ using UnityEngine;
 public class TileWorld : MonoBehaviour
 {
     public TileGraph tileGraph;
-    public Vector3 graphSize = new Vector3(40,1,40);
     public bool drawRecords = false;
     public bool drawBlocking = false;
 
@@ -22,11 +21,13 @@ public class TileWorld : MonoBehaviour
     public void Init()
     {
         tileGraph.Init();
-        numTiles = tileGraph.WorldToTile(graphSize);
+        numTiles = tileGraph.WorldToTile(tileGraph.graphSize);
         tileDimensions = new Vector3(tileGraph.tileSize, tileGraph.tileSize, tileGraph.tileSize);
         nodeArray = new TileRecord[numTiles.x, numTiles.y];
         ClearNodes();
     }
+
+
 
     public void ClearNodes()
     {
@@ -38,6 +39,7 @@ public class TileWorld : MonoBehaviour
                 nodeArray[tile.x, tile.y].category = NodeCategory.Unvisited;
             }
         }
+
     }
 
     public void SetNodeCategory(IntPoint node, NodeCategory category)
@@ -58,20 +60,21 @@ public class TileWorld : MonoBehaviour
             {
                 for (tile.y = 0; tile.y < numTiles.y; tile.y++)
                 {
-
+                    Vector3 worldLoc = tileGraph.TileToWorld(tile);
+                   // worldLoc.y = tileGraph.heightValues[tile.x, tile.y];
+                    
                     if(nodeArray[tile.x,tile.y].category == NodeCategory.Open)
                     {
                         Gizmos.color = Color.blue;
-                        Gizmos.DrawCube(tileGraph.TileToWorld(tile), tileDimensions);
+                        Gizmos.DrawCube(worldLoc, tileDimensions);
                     }
                     else if(nodeArray[tile.x,tile.y].category == NodeCategory.Closed)
                     {
                         Gizmos.color = Color.gray;
-                        Gizmos.DrawCube(tileGraph.TileToWorld(tile), tileDimensions);
+                        Gizmos.DrawCube(worldLoc, tileDimensions);
                     }
-                    
                     Gizmos.color = Color.black;
-                    Gizmos.DrawWireCube(tileGraph.TileToWorld(tile), tileDimensions);
+                    Gizmos.DrawWireCube(worldLoc, tileDimensions);
 
                 }
             }
@@ -85,8 +88,10 @@ public class TileWorld : MonoBehaviour
                 {
                     if (tileGraph.IsTileBlocked(tile))
                     {
+                        Vector3 worldLoc = tileGraph.TileToWorld(tile);
+                        //worldLoc.y = tileGraph.heightValues[tile.x, tile.y];
                         Gizmos.color = Color.red;
-                        Gizmos.DrawCube(tileGraph.TileToWorld(tile), tileDimensions);
+                        Gizmos.DrawCube(worldLoc, tileDimensions);
                     }
 
                 }
