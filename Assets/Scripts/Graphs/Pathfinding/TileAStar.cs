@@ -26,6 +26,9 @@ public class TileAStar : MonoBehaviour
     private List<IntPoint> priorityNodes;
     private int numOpenNodes;
 
+    //Assigns starting point and goal based on parameters 
+    //before calling the pathfinding function.
+    //Returns true if a function was found.
     public bool FindAgentPath(GameObject agent, Transform goal)
     {
         startTransform = agent.transform;
@@ -71,6 +74,7 @@ public class TileAStar : MonoBehaviour
             if (currentNode.Equals(goalNode))
                 break;
 
+            //Get the neighboring nodes that can be reached from the currentNode
             List<IConnection<IntPoint>> neighbors;
             tileGraph.GetConnections(currentNode, out neighbors);
             foreach (IConnection<IntPoint> edge in neighbors)
@@ -80,8 +84,10 @@ public class TileAStar : MonoBehaviour
                 float endNodeCost = currentRecord.costSoFar + edge.GetCost();
                 float endNodeHeuristic = 0f;
 
+                //Update the cost estimate.
                 if (endRecord.category == NodeCategory.Closed)
                 {
+                    //If true, this record doesn't need to be re-opened
                     if (endRecord.costSoFar <= endNodeCost)
                         continue;
                     endNodeHeuristic = endNodeHeuristic = endRecord.estimatedTotalCost - endRecord.costSoFar;
@@ -90,10 +96,12 @@ public class TileAStar : MonoBehaviour
                 {
                     if (endRecord.costSoFar <= endNodeCost) continue;
 
+                    //Update the heuristic value
                     endNodeHeuristic = endRecord.estimatedTotalCost - endRecord.costSoFar;
                 }
                 else
                 {
+                    //This is an unvisited node that needs an estimate.
                     endNodeHeuristic = heuristic.Estimate(toNode);
                 }
 
@@ -105,6 +113,7 @@ public class TileAStar : MonoBehaviour
                 AddPriorityNode(toNode);
             }
 
+            //Close the current node
             CloseNode(currentNode);
         }
         
@@ -204,12 +213,14 @@ public class TileAStar : MonoBehaviour
         return result;
     }
 
+    //Calls the path smoothing function
     public void SmoothPath()
     {
         if(path!= null)
             smoothedPath = pathSmoother.SmoothPath(path);
     }
 
+    //Resets everything.
     public void Clear()
     {
         numOpenNodes = 0;

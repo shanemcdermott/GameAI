@@ -29,7 +29,8 @@ public class TileGraph : MonoBehaviour, IGraph<IntPoint>
     }
 
     
-
+    //If a terrain reference is provided, samples the height value at each point in the graph.
+    //Otherwise sets each height value equal to the graph's gransform.
     public void InitHeightField()
     {
         IntPoint numTiles = WorldToTile(graphSize);
@@ -113,14 +114,8 @@ public class TileGraph : MonoBehaviour, IGraph<IntPoint>
         }
     }
 
-    public bool IsTileBlocked(Vector3 worldPosition)
-    {
-        Vector3 adjustedPosition = WorldToTileCenter(worldPosition);
-       
-        Collider[] hits = Physics.OverlapBox(adjustedPosition, tileExtents, Quaternion.identity, LayerMask.GetMask(blocking));
-        return hits.Length > 0;
-    }
 
+    //Checks to see if the given tile has anything blocking its path.
     public bool IsTileBlocked(IntPoint tileCoords)
     {
         Vector3 worldNode = TileToWorld(tileCoords);

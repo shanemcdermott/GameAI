@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+//NodeArray implementation for tile based AStar
 public class TileWorld : MonoBehaviour
 {
     public TileGraph tileGraph;
@@ -28,7 +29,7 @@ public class TileWorld : MonoBehaviour
     }
 
 
-
+    //Resets all of the node records.
     public void ClearNodes()
     {
         for (IntPoint tile = new IntPoint(0, 0); tile.x < numTiles.x; tile.x++)
