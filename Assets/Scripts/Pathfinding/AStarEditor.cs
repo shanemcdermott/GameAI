@@ -11,9 +11,9 @@ public class AStarEditor : Editor {
         base.OnInspectorGUI();
         TileAStar world = (TileAStar)target;
 
-        if(GUILayout.Button("Initialize"))
+        if(GUILayout.Button("Clear"))
         {
-            world.Init();
+            world.Clear();
         }
         if(GUILayout.Button("Find Path"))
         {

@@ -13,15 +13,26 @@ public class TileWorld : MonoBehaviour
     private IntPoint numTiles;
     private Vector3 tileDimensions;
 
+    public void Awake()
+    {
+        Init();
+    }
+
+
     public void Init()
     {
         tileGraph.Init();
         numTiles = tileGraph.WorldToTile(graphSize);
         tileDimensions = new Vector3(tileGraph.tileSize, tileGraph.tileSize, tileGraph.tileSize);
         nodeArray = new TileRecord[numTiles.x, numTiles.y];
-        for(IntPoint tile = new IntPoint(0,0); tile.x < numTiles.x; tile.x++)
+        ClearNodes();
+    }
+
+    public void ClearNodes()
+    {
+        for (IntPoint tile = new IntPoint(0, 0); tile.x < numTiles.x; tile.x++)
         {
-            for(tile.y=0; tile.y < numTiles.y; tile.y++)
+            for (tile.y = 0; tile.y < numTiles.y; tile.y++)
             {
                 nodeArray[tile.x, tile.y] = new TileRecord();
                 nodeArray[tile.x, tile.y].category = NodeCategory.Unvisited;
@@ -34,6 +45,10 @@ public class TileWorld : MonoBehaviour
         nodeArray[node.x, node.y].category = category;
     }
 
+    public TileRecord GetRecordAt(IntPoint node)
+    {
+        return nodeArray[node.x, node.y];
+    }
 
     public void OnDrawGizmos()
     {
@@ -43,6 +58,7 @@ public class TileWorld : MonoBehaviour
             {
                 for (tile.y = 0; tile.y < numTiles.y; tile.y++)
                 {
+
                     if(nodeArray[tile.x,tile.y].category == NodeCategory.Open)
                     {
                         Gizmos.color = Color.blue;
@@ -53,7 +69,7 @@ public class TileWorld : MonoBehaviour
                         Gizmos.color = Color.gray;
                         Gizmos.DrawCube(tileGraph.TileToWorld(tile), tileDimensions);
                     }
-
+                    
                     Gizmos.color = Color.black;
                     Gizmos.DrawWireCube(tileGraph.TileToWorld(tile), tileDimensions);
 

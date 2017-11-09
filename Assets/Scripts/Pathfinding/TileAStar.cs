@@ -23,6 +23,16 @@ public class TileAStar : MonoBehaviour
     private List<IntPoint> priorityNodes;
     public int numOpenNodes;
 
+    public void Clear()
+    {
+        numOpenNodes = 0;
+        tileWorld.ClearNodes();
+        path = null;
+        startNode = tileGraph.WorldToTile(startTransform.position);
+        goalNode = tileGraph.WorldToTile(goalTransform.position);
+        priorityNodes = new List<IntPoint>();
+    }
+
     //Initialize tileGraph and clear out path
     public void Init()
     {
@@ -38,18 +48,19 @@ public class TileAStar : MonoBehaviour
 
 
     }
-
-    public void Awake()
-    {
-        FindPath();
-    }
     
+    public bool FindAgentPath(GameObject agent, Transform goal)
+    {
+        startTransform = agent.transform;
+        goalTransform = goal;
+        return FindPath();
+    }
 
-    public void FindPath()
+    public bool FindPath()
     {
         Init();
 
-        while(numOpenNodes > 0)
+        while(GetNumOpenNodes() > 0)
         {
             currentNode = GetSmallestOpenNode();
             TileRecord currentRecord = tileWorld.nodeArray[currentNode.x, currentNode.y];
@@ -98,12 +109,14 @@ public class TileAStar : MonoBehaviour
         if(currentNode.Equals(goalNode))
         {
             Debug.Log("Found Path: ");
-            path = GetPath();
+            path = GetPathConnections();
+            return true;
         }
         else
         {
             Debug.Log("No Path Found");
             path = null;
+            return false;
         }
 
         priorityNodes = null;
@@ -124,15 +137,23 @@ public class TileAStar : MonoBehaviour
         numOpenNodes--;
     }
 
+    public int GetNumOpenNodes()
+    {
+        return priorityNodes.Count;
+    }
+
     public IntPoint GetSmallestOpenNode()
     {
-        float smallestCost = tileWorld.nodeArray[priorityNodes[0].x, priorityNodes[0].y].estimatedTotalCost;
+        
         IntPoint smallestNode = priorityNodes[0];
-        for (int i = 1; i < numOpenNodes; i++)
+        float smallestCost = tileWorld.GetRecordAt(smallestNode).estimatedTotalCost;
+        for (int i = 1; i < GetNumOpenNodes(); i++)
         {
-            if(tileWorld.nodeArray[priorityNodes[i].x, priorityNodes[i].y].estimatedTotalCost < smallestCost)
+            float cost = tileWorld.GetRecordAt(priorityNodes[i]).estimatedTotalCost;
+
+            if (cost < smallestCost)
             {
-                smallestCost = tileWorld.nodeArray[priorityNodes[i].x, priorityNodes[i].y].estimatedTotalCost;
+                smallestCost = cost;
                 smallestNode = priorityNodes[i];
             }
         }
@@ -140,19 +161,41 @@ public class TileAStar : MonoBehaviour
         return smallestNode;
     }
 
-
-    public List<IConnection<IntPoint>> GetPath()
+    public List<IConnection<IntPoint>> GetPathConnections()
     {
         List<IConnection<IntPoint>> result = new List<IConnection<IntPoint>>();
-        IntPoint pathNode = new IntPoint(currentNode.x,currentNode.y);
+        IntPoint pathNode = new IntPoint(currentNode.x, currentNode.y);
         IConnection<IntPoint> edge = tileWorld.nodeArray[pathNode.x, pathNode.y].edge;
         while (!pathNode.Equals(startNode))
         {
             result.Add(edge);
             pathNode = edge.GetFromNode();
-            edge = tileWorld.nodeArray[pathNode.x, pathNode.y].edge; 
+            edge = tileWorld.nodeArray[pathNode.x, pathNode.y].edge;
         }
 
+        result.Reverse();
+        return result;
+    }
+
+    /// <summary>
+    /// Returns list of path points in world coordinates.
+    /// </summary>
+    /// <returns></returns>
+    public List<Vector3> GetPath()
+    {
+        List<Vector3> result = new List<Vector3>();
+        IntPoint pathNode = new IntPoint(currentNode.x,currentNode.y);
+        IConnection<IntPoint> edge = tileWorld.nodeArray[pathNode.x, pathNode.y].edge;
+
+        result.Add(tileGraph.TileToWorld(pathNode));
+        while (!pathNode.Equals(startNode))
+        {
+            pathNode = edge.GetFromNode();
+            edge = tileWorld.nodeArray[pathNode.x, pathNode.y].edge;
+            result.Add(tileGraph.TileToWorld(pathNode));
+        }
+
+        //result.Add(tileGraph.TileToWorld(edge.GetFromNode()));
         result.Reverse();
         return result;
     }
