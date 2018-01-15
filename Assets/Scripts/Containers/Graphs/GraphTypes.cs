@@ -67,6 +67,11 @@ public struct IntPoint
         this.y = Mathf.FloorToInt(v.y);
     }
 
+    public static IntPoint Zero()
+    {
+        return new IntPoint(0, 0);
+    }
+
     public static IntPoint Add(IntPoint a, IntPoint b)
     {
         return IntPoint.Add(a, b.x, b.y);
@@ -101,6 +106,16 @@ public struct IntPoint
         // compare elements here
         return x == otherPoint.x && y == otherPoint.y;
 
+    }
+
+    public bool GreaterThan(IntPoint p)
+    {
+        return x > p.x && y > p.y;
+    }
+
+    public bool LessThan(IntPoint p)
+    {
+        return x < p.x && y < p.y;
     }
 }
 
