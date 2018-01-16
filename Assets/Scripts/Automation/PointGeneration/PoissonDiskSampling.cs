@@ -20,8 +20,11 @@ public class PoissonDiskSampling : PointGenerator
 
     [SerializeField]
     private float cellSize;
-    private Rect bounds;
     public Grid2D grid;
+
+    private Vector2 sourcePoint;
+    //How many times the current @sourcePoint has been sampled
+    private int sampleCount;
 
     private RandomQueue<Vector2> processList;
 
@@ -33,32 +36,47 @@ public class PoissonDiskSampling : PointGenerator
         grid = new Grid2D(Mathf.CeilToInt(width / cellSize), Mathf.CeilToInt(height / cellSize));
         processList = new RandomQueue<Vector2>();
         samplePoints = new List<Vector2>();
-        bounds = new Rect(0, 0, width, height);
+        SetBounds(width, height);
     }
 
     public Vector2 MakeRandomPoint()
     {
-        float x = UnityEngine.Random.Range(0, width);
-        float y = UnityEngine.Random.Range(0, height);
-        return new Vector2(x, y);
+        return base.NextPoint();
+    }
+
+    public override Vector2 NextPoint()
+    {
+        if (sampleCount >= newPointsCount)
+        {
+            if (processList.Empty())
+                return Vector2.positiveInfinity;
+            sampleCount = 1;
+            sourcePoint = processList.Pop();
+        }
+        for(;sampleCount < newPointsCount; sampleCount++)
+        {
+            Vector2 newPoint = GenerateRandomPointAround(sourcePoint, minDistance);
+            if (bounds.Contains(newPoint) && !IsInNeighborhood(newPoint))
+            {
+                AddPoint(newPoint);
+                return newPoint;
+            }
+        }
+        return NextPoint();
+    }
+
+    private bool GenerateNextPoint()
+    {
+        return !(NextPoint().Equals(Vector2.positiveInfinity));
     }
 
     public void GeneratePoisson()
     {
         Init();
-
-        AddPoint(MakeRandomPoint());
-        while (!processList.Empty())
+        sourcePoint = MakeRandomPoint();
+        AddPoint(sourcePoint);
+        while (GenerateNextPoint())
         {
-            Vector2 point = processList.Pop();
-            for (int i = 0; i < newPointsCount && samplePoints.Count < maxTotalPoints; i++)
-            {
-                Vector2 newPoint = GenerateRandomPointAround(point, minDistance);
-               if(bounds.Contains(newPoint) && !IsInNeighborhood(newPoint))
-                {
-                    AddPoint(newPoint);
-                }
-            }
         }
         Debug.Log("Generated " + samplePoints.Count + " points with Poisson Disk Sampling.");
     }
