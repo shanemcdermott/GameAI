@@ -24,19 +24,32 @@ public class PoissonDiskSampling : PointGenerator
 
     private Vector2 sourcePoint;
     //How many times the current @sourcePoint has been sampled
-    private int sampleCount;
+    private int sampleCount = int.MaxValue;
 
     private RandomQueue<Vector2> processList;
 
-    public List<Vector2> samplePoints;
-
-    public void Init()
+    public override void Init()
     {
         cellSize = minDistance / Mathf.Sqrt(2);
         grid = new Grid2D(Mathf.CeilToInt(width / cellSize), Mathf.CeilToInt(height / cellSize));
         processList = new RandomQueue<Vector2>();
         samplePoints = new List<Vector2>();
         SetBounds(width, height);
+    }
+
+    public override void Init(Vector2[] sourcePoints)
+    {
+        Init();
+        foreach(Vector2 v in sourcePoints)
+        {
+            AddPoint(v);
+        }
+    }
+
+    public void NextSourcePoint()
+    {
+        sampleCount = 1;
+        sourcePoint = processList.Pop();
     }
 
     public Vector2 MakeRandomPoint()
@@ -48,10 +61,10 @@ public class PoissonDiskSampling : PointGenerator
     {
         if (sampleCount >= newPointsCount)
         {
-            if (processList.Empty())
+            if(processList.Empty())
                 return Vector2.positiveInfinity;
-            sampleCount = 1;
-            sourcePoint = processList.Pop();
+
+            NextSourcePoint();
         }
         for(;sampleCount < newPointsCount; sampleCount++)
         {
@@ -73,8 +86,8 @@ public class PoissonDiskSampling : PointGenerator
     public void GeneratePoisson()
     {
         Init();
-        sourcePoint = MakeRandomPoint();
-        AddPoint(sourcePoint);
+        AddPoint(MakeRandomPoint());
+        NextSourcePoint();
         while (GenerateNextPoint())
         {
         }
