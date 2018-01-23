@@ -77,89 +77,30 @@ public struct IntTriangle
     }
 }
 
-public struct DelaunayTriangle
+public struct FTriangle
 {
-    public IntTriangle Triangle;
-    private List<DelaunayTriangle> Children;
+	public Vector2 A;
+	public Vector2 B;
+	public Vector2 C;
+	
+	public FTriangle(Vector2 A, Vector2 B, Vector2 C)
+	{
+		this.A = A;
+		this.B = B;
+		this.C = C;
+	}
+}
 
-    public DelaunayTriangle(int A, int B, int C)
-    {
-        Triangle = new IntTriangle(A, B, C);
-        Children = new List<DelaunayTriangle>();
-    }
-
-    public DelaunayTriangle(IntTriangle Tri)
-    {
-        this.Triangle = Tri;
-        Children = new List<DelaunayTriangle>();
-    }
-
-    public void AddChild(DelaunayTriangle dt)
-    {
-        Children.Add(dt);
-    }
-
-    public void RemoveChild(DelaunayTriangle dt)
-    {
-        Children.Remove(dt);
-    }
-
-    public List<DelaunayTriangle> GetTriangles()
-    {
-        if (Children == null || Children.Count == 0)
-            return new List<DelaunayTriangle>(new DelaunayTriangle[] { new DelaunayTriangle(this.Triangle) });
-        return Children;
-    }
-
-    public IntPoint[] Edges()
-    {
-        return Triangle.Edges();
-    }
-
-    public IntPoint[] AllEdges()
-    {
-        List<DelaunayTriangle> tris = GetTriangles();
-        List<IntPoint> e = new List<IntPoint>();
-        foreach(DelaunayTriangle dt in tris)
-        {
-            
-            e.AddRange(dt.Edges());
-        }
-
-
-        return e.ToArray();
-    }
-
-    public bool SharesVertexWith(DelaunayTriangle other)
-    {
-        return Triangle.SharesVertexWith(other.Triangle);
-    }
-
-    public bool HasVertex(int a)
-    {
-        return Triangle.HasVertex(a);
-    }
-
-    public bool HasEdge(IntPoint edge)
-    {
-        return Triangle.HasEdge(edge);
-    }
-
-    public bool HasEdge(int a, int b)
-    {
-        return Triangle.HasEdge(a, b);
-    }
-
-    public override bool Equals(object obj)
-    {
-        if (!(obj is DelaunayTriangle))
-            return false;
-
-        DelaunayTriangle dt = (DelaunayTriangle)obj;
-        // compare elements here
-        return Triangle.Equals(dt.Triangle);
-
-    }
+public struct PolyNode
+{
+	public Vector2 Center;
+	public Vector2[] Points;
+	
+	public PolyNode(Vector2 Center, Vector2[] Points)
+	{
+		this.Center = Center;
+		this.Points = Points;
+	}
 }
 
 public class DelaunayTriangulation : MonoBehaviour
@@ -173,8 +114,6 @@ public class DelaunayTriangulation : MonoBehaviour
 
     protected List<Vector2> points = new List<Vector2>();
 
-    DelaunayTriangle superTriangle;
-
     protected List<IntTriangle> triangles = new List<IntTriangle>();
 
     public void Init()
@@ -182,8 +121,6 @@ public class DelaunayTriangulation : MonoBehaviour
         
         points = new List<Vector2>(Corners());
         triangles = new List<IntTriangle>();
-
-        superTriangle = new DelaunayTriangle(0, 1, 2);
 
         triangles.Add(new IntTriangle(0, 1, 2));
         triangles.Add(new IntTriangle(2, 3, 0));
@@ -281,63 +218,6 @@ public class DelaunayTriangulation : MonoBehaviour
         */
     }
 
-    protected void UpdateDeltris(Vector2 NewPoint)
-    {
-        List<DelaunayTriangle> badTriangles = new List<DelaunayTriangle>();
-        // first find all the triangles that are no longer valid due to the insertion
-
-        foreach (DelaunayTriangle dt in superTriangle.GetTriangles())
-        {
-            if (IsPointInsideCircumcircle(NewPoint, dt))
-                badTriangles.Add(dt);
-        }
-
-        //Find the boundary of the polygonal hole
-        List<IntPoint> polygon = new List<IntPoint>();
-        foreach (DelaunayTriangle dt in badTriangles)
-        {
-            foreach (IntPoint edge in dt.Edges())
-            {
-                //if edge is not shared by any other triangles in badTriangles
-                //add edge to polygon
-                bool bIsShared = false;
-                foreach (DelaunayTriangle bdt in badTriangles)
-                {
-                    if (bdt.Equals(dt)) continue;
-
-                    bIsShared = bdt.HasEdge(edge);
-                    if (bIsShared) break;
-                }
-                if (!bIsShared)
-                    polygon.Add(edge);
-            }
-        }
-        //Remove bad triangles from the triangulation
-        foreach (DelaunayTriangle dt in badTriangles)
-        {
-            superTriangle.RemoveChild(dt);
-        }
-
-        int newPointIndex = points.Count - 1;
-        //Re-triangulate the polygonal hole
-        foreach (IntPoint edge in polygon)
-        {
-            DelaunayTriangle dt = new DelaunayTriangle(edge.x, edge.y, newPointIndex);
-            superTriangle.AddChild(dt);
-        }
-
-        foreach (DelaunayTriangle dt in superTriangle.GetTriangles())
-        {
-            if (superTriangle.SharesVertexWith(dt))
-                superTriangle.RemoveChild(dt);
-        }
-    }
-
-    public bool IsPointInsideCircumcircle(Vector2 p, DelaunayTriangle dt)
-    {
-        return IsPointInsideCircumcircle(p, dt.Triangle);
-    }
-
     public bool IsPointInsideCircumcircle(Vector2 p, IntTriangle dt)
     {
         return MathOps.IsPointInCircumcircle(p, points[dt.A], points[dt.B], points[dt.C]);
@@ -367,6 +247,17 @@ public class DelaunayTriangulation : MonoBehaviour
         return triangles.ToArray();
     }
 
+	public FTriangle GetTriangle(int index)
+	{
+		return new FTriangle(points[triangles[index].A], points[triangles[index].B], points[triangles[index].C]);
+	}
+	
+	public PolyNode[] ToVoronoi()
+	{
+		
+		return new PolyNode[]{};
+	}
+	
     public void OnDrawGizmosSelected()
     {
         foreach (IntTriangle t in triangles)

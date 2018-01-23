@@ -20,7 +20,7 @@ public class ClutterPlacement : MonoBehaviour
         foreach (Vector2 v in points)
         {
             Vector3 v3 = new Vector3(v.x, 0, v.y) + transform.position;
-            GameObject go = Instantiate(GetRandomClutter(), v3, transform.rotation);
+            GameObject go = (GameObject)Instantiate(GetRandomClutter(), v3, transform.rotation);
             if(go)
             {
                 go.transform.SetParent(transform);

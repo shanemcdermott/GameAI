@@ -6,8 +6,8 @@ using UnityEngine;
 public class GraphToTexture : MonoBehaviour
 {
 
-    public int width = 512;
-    public int height = 512;
+    public int width = 100;
+    public int height = 100;
     public Texture2D texture;
     public DelaunayTriangulation dtriangles;
     public string fileName = "DelaunayTexture.png";
@@ -21,7 +21,7 @@ public class GraphToTexture : MonoBehaviour
         {
             for(int y = 0; y < height; y++)
             {
-                Vector2 v = new Vector2(x / 5.12f, y / 5.12f);
+                Vector2 v = new Vector2(x, y);
                 texture.SetPixel(x, y, dtriangles.GetPointColor(v));
             }
         }
